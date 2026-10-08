@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { signIn } from "@/lib/auth-client";
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { signIn } from '@/lib/auth-client';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -15,14 +15,14 @@ export default function LoginPage() {
     const formData = new FormData(e.currentTarget);
 
     const res = await signIn.email({
-      email: formData.get("email") as string,
-      password: formData.get("password") as string,
+      email: formData.get('email') as string,
+      password: formData.get('password') as string,
     });
 
     if (res.error) {
-      setError(res.error.message || "Something went wrong.");
+      setError(res.error.message || 'Something went wrong.');
     } else {
-      router.push("/dashboard");
+      router.push('/dashboard');
     }
   }
 

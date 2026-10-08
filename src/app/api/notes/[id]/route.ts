@@ -1,13 +1,14 @@
-import { NextResponse } from "next/server";
-import { requireAuth } from "@/lib/require-auth";
-import prisma from "@/lib/prisma";
-import { updateNoteSchema } from "@/lib/validations/note";
+import { NextResponse } from 'next/server';
+import { requireAuth } from '@/lib/require-auth';
+import prisma from '@/lib/prisma';
+import { updateNoteSchema } from '@/lib/validations/note';
 
 type RouteContext = { params: Promise<{ id: string }> };
 
 export async function PATCH(request: Request, { params }: RouteContext) {
   const session = await requireAuth();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session)
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const { user } = session;
   const { id } = await params;
 
@@ -15,13 +16,13 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
   const parsed = updateNoteSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
-      { error: parsed.error.issues[0]?.message ?? "Invalid input" },
+      { error: parsed.error.issues[0]?.message ?? 'Invalid input' },
       { status: 400 }
     );
   }
@@ -33,14 +34,14 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     });
     return NextResponse.json(note);
   } catch {
-    return NextResponse.json({ error: "Note not found" }, { status: 404 });
+    return NextResponse.json({ error: 'Note not found' }, { status: 404 });
   }
 }
 
-
 export async function DELETE(_request: Request, { params }: RouteContext) {
   const session = await requireAuth();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session)
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const { user } = session;
   const { id } = await params;
 
@@ -50,6 +51,6 @@ export async function DELETE(_request: Request, { params }: RouteContext) {
     });
     return NextResponse.json({ success: true });
   } catch {
-    return NextResponse.json({ error: "Note not found" }, { status: 404 });
+    return NextResponse.json({ error: 'Note not found' }, { status: 404 });
   }
 }

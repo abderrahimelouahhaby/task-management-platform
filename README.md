@@ -1,36 +1,122 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Mitodo
+
+A lightweight, self-hosted **task management platform** built with Next.js. Create an account,
+capture tasks with notes, and manage them from anywhere — with full control over your data.
+
+> **Status:** In active development. Core features are functional; more are on the way.
+
+## Tech Stack
+
+| Layer      | Technology                                              |
+| ---------- | ------------------------------------------------------- |
+| Framework  | [Next.js 16](https://nextjs.org) (App Router), React 19 |
+| Language   | TypeScript                                              |
+| Database   | PostgreSQL 17 (via Docker)                              |
+| ORM        | Prisma 7 + `@prisma/adapter-pg` driver adapter          |
+| Auth       | Better Auth (email & password)                          |
+| Styling    | Tailwind CSS 4, dark/light theme via `next-themes`      |
+| Validation | Zod                                                     |
+| Icons      | lucide-react                                            |
+
+## Features
+
+- **Email & password authentication** — register, sign in, and session management powered by Better Auth
+- **Task CRUD** — create, read, update, and delete your tasks from the dashboard
+- **Per-user data isolation** — every task is scoped to its owner; API routes enforce authentication
+- **Validated input** — all writes are checked with Zod schemas before hitting the database
+- **Dark & light mode** — system-aware theme toggle
+- **Responsive UI** — works across desktop and mobile
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- [Node.js](https://nodejs.org) 20+
+- [Docker](https://docs.docker.com/get-docker/) (for the local PostgreSQL instance)
+
+### Installation
 
 ```bash
+# 1. Clone the repository
+git clone git@github.com:abderrahimelouahhaby/mitodo-project.git
+cd mitodo-project
+
+# 2. Start PostgreSQL
+docker compose up -d
+
+# 3. Configure environment variables
+cp .env.example .env
+# then edit .env — generate a secret with: openssl rand -base64 32
+
+# 4. Install dependencies
+npm install
+
+# 5. Generate the Prisma client and apply migrations
+npx prisma generate
+npx prisma migrate deploy
+
+# 6. Start the development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) to view the app.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Environment Variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Variable             | Description                       | Example                                                |
+| -------------------- | --------------------------------- | ------------------------------------------------------ |
+| `DATABASE_URL`       | PostgreSQL connection string      | `postgresql://postgres:postgres@localhost:5432/mitodo` |
+| `BETTER_AUTH_SECRET` | Secret used to sign auth sessions | `openssl rand -base64 32`                              |
+| `BETTER_AUTH_URL`    | Base URL of the running app       | `http://localhost:3000`                                |
 
-## Learn More
+## Project Structure
 
-To learn more about Next.js, take a look at the following resources:
+```
+src/
+├── app/
+│   ├── (auth)/          # Login and register pages
+│   ├── api/
+│   │   ├── auth/        # Better Auth catch-all route
+│   │   └── notes/       # Task CRUD endpoints
+│   ├── dashboard/       # Authenticated task list
+│   ├── layout.tsx       # Root layout (providers, header, footer)
+│   └── page.tsx         # Landing page
+├── components/          # UI components (forms, items, theme toggle)
+├── generated/prisma/    # Generated Prisma client (gitignored)
+└── lib/
+    ├── auth.ts          # Better Auth server config
+    ├── auth-client.ts   # Better Auth React client
+    ├── prisma.ts        # Prisma client singleton
+    ├── require-auth.ts  # Session guard for API routes
+    └── validations/     # Zod schemas
+prisma/
+├── schema.prisma        # Data models
+└── migrations/          # SQL migrations
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Available Scripts
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Command                | Description                      |
+| ---------------------- | -------------------------------- |
+| `npm run dev`          | Start the development server     |
+| `npm run build`        | Create a production build        |
+| `npm run start`        | Serve the production build       |
+| `npm run lint`         | Run ESLint                       |
+| `npm run format`       | Format all files with Prettier   |
+| `npm run format:check` | Check formatting without writing |
 
-## Deploy on Vercel
+Useful Prisma commands: `npx prisma generate`, `npx prisma migrate dev`, `npx prisma studio`.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## API Reference
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+All endpoints under `/api/notes` require an authenticated session (HTTP-only cookie),
+otherwise they return `401 Unauthorized`. Bodies must be `application/json`.
+
+| Method   | Endpoint         | Description    | Body                                   |
+| -------- | ---------------- | -------------- | -------------------------------------- |
+| `GET`    | `/api/notes`     | List own tasks | —                                      |
+| `POST`   | `/api/notes`     | Create a task  | `{ title: string, content?: string }`  |
+| `PATCH`  | `/api/notes/:id` | Update a task  | `{ title?: string, content?: string }` |
+| `DELETE` | `/api/notes/:id` | Delete a task  | —                                      |
+
+Auth endpoints are served by Better Auth at `/api/auth/*`.

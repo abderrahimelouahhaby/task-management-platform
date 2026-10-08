@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useState } from "react";
+import { useState } from 'react';
 
 type NoteFormProps = {
   initialValues?: { title: string; content: string };
@@ -9,9 +9,14 @@ type NoteFormProps = {
   onCancel?: () => void;
 };
 
-export function NoteForm({ initialValues, submitLabel, onSubmit, onCancel }: NoteFormProps) {
-  const [title, setTitle] = useState(initialValues?.title ?? "");
-  const [content, setContent] = useState(initialValues?.content ?? "");
+export function NoteForm({
+  initialValues,
+  submitLabel,
+  onSubmit,
+  onCancel,
+}: NoteFormProps) {
+  const [title, setTitle] = useState(initialValues?.title ?? '');
+  const [content, setContent] = useState(initialValues?.content ?? '');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -20,25 +25,28 @@ export function NoteForm({ initialValues, submitLabel, onSubmit, onCancel }: Not
 
     const trimmedTitle = title.trim();
     if (!trimmedTitle) {
-      setError("Title is required");
+      setError('Title is required');
       return;
     }
     if (trimmedTitle.length > 200) {
-      setError("Title must be 200 chars or less");
+      setError('Title must be 200 chars or less');
       return;
     }
     if (content.length > 10000) {
-      setError("Content must be 10000 chars or less");
+      setError('Content must be 10000 chars or less');
       return;
     }
 
     setError(null);
     setSubmitting(true);
     try {
-      const ok = await onSubmit({ title: trimmedTitle, content: content.trim() });
+      const ok = await onSubmit({
+        title: trimmedTitle,
+        content: content.trim(),
+      });
       if (ok) {
-        setTitle("");
-        setContent("");
+        setTitle('');
+        setContent('');
       }
     } finally {
       setSubmitting(false);
@@ -69,7 +77,7 @@ export function NoteForm({ initialValues, submitLabel, onSubmit, onCancel }: Not
           disabled={submitting}
           className="rounded-md bg-neutral-900 text-white font-medium px-4 py-2 hover:bg-neutral-700 disabled:opacity-50 dark:bg-white dark:text-black dark:hover:bg-neutral-200"
         >
-          {submitting ? "Saving..." : submitLabel}
+          {submitting ? 'Saving...' : submitLabel}
         </button>
         {onCancel && (
           <button

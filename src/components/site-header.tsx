@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { useSession, signOut } from "@/lib/auth-client";
-import { ThemeToggle } from "@/components/theme-toggle";
+import Link from 'next/link';
+import { useSession, signOut } from '@/lib/auth-client';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 export function SiteHeader() {
   const { data: session } = useSession();

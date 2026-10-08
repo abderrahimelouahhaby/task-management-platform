@@ -1,12 +1,15 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { NoteForm } from "@/components/note-form";
-import type { Note } from "@/lib/types";
+import { useState } from 'react';
+import { NoteForm } from '@/components/note-form';
+import type { Note } from '@/lib/types';
 
 type NoteItemProps = {
   note: Note;
-  onUpdate: (id: string, data: { title: string; content: string }) => Promise<boolean>;
+  onUpdate: (
+    id: string,
+    data: { title: string; content: string }
+  ) => Promise<boolean>;
   onDelete: (id: string) => Promise<boolean>;
 };
 
@@ -18,7 +21,7 @@ export function NoteItem({ note, onUpdate, onDelete }: NoteItemProps) {
     return (
       <li className="rounded-lg border border-neutral-200 p-4 dark:border-neutral-800">
         <NoteForm
-          initialValues={{ title: note.title, content: note.content ?? "" }}
+          initialValues={{ title: note.title, content: note.content ?? '' }}
           submitLabel="Save"
           onSubmit={async (data) => {
             const ok = await onUpdate(note.id, data);
@@ -54,7 +57,7 @@ export function NoteItem({ note, onUpdate, onDelete }: NoteItemProps) {
           </button>
           <button
             onClick={async () => {
-              if (!confirm("Delete this note?")) return;
+              if (!confirm('Delete this note?')) return;
               setDeleting(true);
               await onDelete(note.id);
               setDeleting(false);
