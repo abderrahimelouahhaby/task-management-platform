@@ -22,7 +22,7 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
       className={`${inter.className} h-full antialiased`}
       suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col bg-white text-neutral-900 dark:bg-neutral-950 dark:text-white">
+      <body className="min-h-full flex flex-col bg-white text-neutral-900 dark:bg-[#121212] dark:text-white">
         <Providers>
           <SiteHeader />
           {children}
