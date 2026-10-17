@@ -12,8 +12,27 @@ concurrency:
 jobs:
   quality:
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: mohima_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d mohima_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/mohima_test
+      BETTER_AUTH_SECRET: ci-only-secret-ci-only-secret-12345
+      BETTER_AUTH_URL: http://localhost:3000
+
     steps:
       - name: Check out the code
         uses: actions/checkout@v4
@@ -26,6 +45,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Apply database migrations
+        run: npx prisma migrate deploy
 
       - name: Lint
         run: npm run lint
