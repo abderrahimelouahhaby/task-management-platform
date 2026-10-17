@@ -21,7 +21,8 @@
     "db:studio": "prisma studio",
     "db:migrate:test": "DATABASE_URL=postgresql://postgres:postgres@localhost:5432/mohima_test prisma migrate deploy",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.2",
