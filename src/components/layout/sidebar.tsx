@@ -3,26 +3,39 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { CalendarDays, FolderKanban, LayoutDashboard, ListChecks, Settings } from "lucide-react";
+import { WorkspaceSwitcher } from "@/features/workspaces/components/workspace-switcher";
+import type { WorkspaceSummary } from "@/features/workspaces/types";
 import { cn } from "@/lib/utils";
 
-const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/tasks", label: "Tasks", icon: ListChecks },
-  { href: "/calendar", label: "Calendar", icon: CalendarDays },
-  { href: "/projects", label: "Projects", icon: FolderKanban },
-  { href: "/settings", label: "Settings", icon: Settings },
-];
-
 type SidebarProps = {
+  workspaces: WorkspaceSummary[];
+  currentWorkspaceId: string;
   onNavigate?: () => void;
 };
 
-export function Sidebar({ onNavigate }: SidebarProps) {
+export function Sidebar({ workspaces, currentWorkspaceId, onNavigate }: SidebarProps) {
   const pathname = usePathname();
+  const base = `/w/${currentWorkspaceId}`;
+
+  const navItems = [
+    { href: `${base}/dashboard`, label: "Dashboard", icon: LayoutDashboard },
+    { href: `${base}/tasks`, label: "Tasks", icon: ListChecks },
+    { href: `${base}/calendar`, label: "Calendar", icon: CalendarDays },
+    { href: `${base}/projects`, label: "Projects", icon: FolderKanban },
+    { href: `${base}/settings`, label: "Settings", icon: Settings },
+  ];
 
   return (
     <nav className="flex h-full flex-col gap-1 p-4" aria-label="Main navigation">
       <div className="mb-4 px-3 text-lg font-semibold tracking-tight">Mohima</div>
+
+      <div className="mb-4">
+        <WorkspaceSwitcher
+          workspaces={workspaces}
+          currentWorkspaceId={currentWorkspaceId}
+          onNavigate={onNavigate}
+        />
+      </div>
 
       {navItems.map(({ href, label, icon: Icon }) => {
         const isActive = pathname === href || pathname.startsWith(`${href}/`);

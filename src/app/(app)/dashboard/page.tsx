@@ -1,20 +1,11 @@
-import type { Metadata } from "next";
-import { PageHeader } from "@/components/shared/page-header";
+import { redirect } from "next/navigation";
+import { ensurePersonalWorkspace } from "@/server/services/workspaces.service";
 import { requireSession } from "@/server/session";
 
-export const metadata: Metadata = { title: "Dashboard" };
-
-export default async function DashboardPage() {
+/** /dashboard sends you to the dashboard of your personal workspace. */
+export default async function DashboardRedirectPage() {
   const session = await requireSession();
-  const firstName = session.user.name.trim().split(/\s+/)[0] ?? "there";
+  const workspace = await ensurePersonalWorkspace(session.user.id);
 
-  return (
-    <>
-      <PageHeader
-        title={`Welcome back, ${firstName}`}
-        description="Your tasks and deadlines at a glance."
-      />
-      <p className="text-sm text-muted-foreground">Coming soon.</p>
-    </>
-  );
+  redirect(`/w/${workspace.id}/dashboard`);
 }
