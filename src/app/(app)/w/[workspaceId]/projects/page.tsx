@@ -1,13 +1,16 @@
 import type { Metadata } from "next";
-import { PageHeader } from "@/components/shared/page-header";
+import { ProjectsView } from "@/features/projects/components/projects-view";
+import { getWorkspaceContext } from "@/server/workspace-context";
 
 export const metadata: Metadata = { title: "Projects" };
 
-export default function ProjectsPage() {
-  return (
-    <>
-      <PageHeader title="Projects" description="Organize your tasks into projects." />
-      <p className="text-sm text-muted-foreground">Coming soon.</p>
-    </>
-  );
+type ProjectsPageProps = {
+  params: Promise<{ workspaceId: string }>;
+};
+
+export default async function ProjectsPage({ params }: ProjectsPageProps) {
+  const { workspaceId } = await params;
+  const { role } = await getWorkspaceContext(workspaceId);
+
+  return <ProjectsView workspaceId={workspaceId} role={role} />;
 }
