@@ -2,11 +2,17 @@
 
 import { useState } from "react";
 import { Menu } from "lucide-react";
+import type { WorkspaceSummary } from "@/features/workspaces/types";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Sidebar } from "./sidebar";
 
-export function MobileNav() {
+type MobileNavProps = {
+  workspaces: WorkspaceSummary[];
+  currentWorkspaceId: string;
+};
+
+export function MobileNav({ workspaces, currentWorkspaceId }: MobileNavProps) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -18,7 +24,11 @@ export function MobileNav() {
       </SheetTrigger>
       <SheetContent side="left" className="w-64 p-0">
         <SheetTitle className="sr-only">Navigation menu</SheetTitle>
-        <Sidebar onNavigate={() => setOpen(false)} />
+        <Sidebar
+          workspaces={workspaces}
+          currentWorkspaceId={currentWorkspaceId}
+          onNavigate={() => setOpen(false)}
+        />
       </SheetContent>
     </Sheet>
   );
