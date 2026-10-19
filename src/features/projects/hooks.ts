@@ -36,7 +36,10 @@ export function useUpdateProject(workspaceId: string) {
       api<ProjectDto>(`/api/projects/${projectId}`, { method: "PATCH", body: input }),
     onSuccess: () => {
       toast.success("Project updated");
-      return queryClient.invalidateQueries({ queryKey: queryKeys.projects(workspaceId) });
+      return Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.projects(workspaceId) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.tasks(workspaceId) }),
+      ]);
     },
     onError: (error) => toast.error(error.message),
   });
@@ -50,7 +53,10 @@ export function useDeleteProject(workspaceId: string) {
       api<{ id: string }>(`/api/projects/${projectId}`, { method: "DELETE" }),
     onSuccess: () => {
       toast.success("Project deleted");
-      return queryClient.invalidateQueries({ queryKey: queryKeys.projects(workspaceId) });
+      return Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.projects(workspaceId) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.tasks(workspaceId) }),
+      ]);
     },
     onError: (error) => toast.error(error.message),
   });
