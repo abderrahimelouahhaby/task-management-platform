@@ -1,13 +1,16 @@
 import type { Metadata } from "next";
-import { PageHeader } from "@/components/shared/page-header";
+import { TasksView } from "@/features/tasks/components/tasks-view";
+import { getWorkspaceContext } from "@/server/workspace-context";
 
 export const metadata: Metadata = { title: "Tasks" };
 
-export default function TasksPage() {
-  return (
-    <>
-      <PageHeader title="Tasks" description="Create, filter, and complete your tasks." />
-      <p className="text-sm text-muted-foreground">Coming soon.</p>
-    </>
-  );
+type TasksPageProps = {
+  params: Promise<{ workspaceId: string }>;
+};
+
+export default async function TasksPage({ params }: TasksPageProps) {
+  const { workspaceId } = await params;
+  const { user, role } = await getWorkspaceContext(workspaceId);
+
+  return <TasksView workspaceId={workspaceId} role={role} currentUserId={user.id} />;
 }
