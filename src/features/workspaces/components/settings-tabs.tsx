@@ -1,9 +1,8 @@
 "use client";
 
-import { Tag } from "lucide-react";
-import { EmptyState } from "@/components/shared/empty-state";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { LabelsSettings } from "@/features/labels/components/labels-settings";
 import { MembersSettings } from "@/features/members/components/members-settings";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Role } from "@/lib/permissions";
 import type { WorkspaceType } from "../types";
 import { GeneralSettings } from "./general-settings";
@@ -37,11 +36,7 @@ export function SettingsTabs({ workspace, role, currentUserId }: SettingsTabsPro
       </TabsContent>
 
       <TabsContent value="labels" className="mt-6">
-        <EmptyState
-          icon={Tag}
-          title="Labels are coming soon"
-          description="You will be able to create colored labels for your tasks on Day 4."
-        />
+        <LabelsSettings workspaceId={workspace.id} role={role} />
       </TabsContent>
     </Tabs>
   );

@@ -18,3 +18,13 @@
   - Security details matter: show the same generic message for a wrong email or wrong password (so attackers cannot find out which emails have accounts), and keep secrets out of Git.
   - Production needs its own setup: environment variables per environment on Vercel, a migration run on the Neon database, and `BETTER_AUTH_URL` set to only the site's origin (`https://...`, no path, no trailing slash).
 - Plan for tomorrow: permissions, workspaces and members, projects.
+
+## Day 3
+
+- Done: role permission rules (Owner, Admin, Member, Viewer) with a full test matrix, API helpers (`withAuth`, standard `{ data }` / `{ error }` responses, safe error handling), workspace, members and projects services with the permission checks inside, workspace URLs (`/w/[workspaceId]`), workspace switcher, Settings (General and Members tabs), Projects screen, and integration tests that include IDOR checks.
+- Blocked / confusing: No big blockers today. The permission tests made it easy to be confident when I changed things.
+- Learned:
+  - Authentication answers "who are you?" and authorization answers "what can you do?". Broken access control is the number one web security risk, so I wrote the permission rules first as plain functions and tested every role against every action. Anything not listed is denied by default.
+  - The server must check everything, because the UI only hides buttons. A user who is not in a workspace gets a 404 instead of a 403, so the workspace's existence is never revealed. Lookups are scoped by workspace, so ids from another workspace never match (IDOR). I tested this by calling the API by hand as a Viewer and as an Admin.
+  - Clean layers help a lot: thin routes (login check, Zod validation, then call a service), services that check membership and role before doing the work, and one shared `can()` function used by both the server and the UI. TanStack Query then handles loading, caching and refreshing the lists after every change.
+- Plan for tomorrow: tasks CRUD, labels, and the task list view.
