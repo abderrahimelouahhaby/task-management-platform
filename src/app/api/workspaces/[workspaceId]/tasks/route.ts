@@ -1,13 +1,16 @@
+import { taskListQuerySchema } from "@/features/tasks/filters";
 import { createTaskSchema } from "@/features/tasks/schemas";
 import { ok, readJson, withAuth } from "@/server/http";
 import { createTask, listTasks } from "@/server/services/tasks.service";
 
 type Params = { workspaceId: string };
 
-export const GET = withAuth<Params>(async (_request, { user, params }) => {
-  const tasks = await listTasks(user.id, params.workspaceId);
+export const GET = withAuth<Params>(async (request, { user, params }) => {
+  const url = new URL(request.url);
+  const query = taskListQuerySchema.parse(Object.fromEntries(url.searchParams));
+  const page = await listTasks(user.id, params.workspaceId, query);
 
-  return ok(tasks);
+  return ok(page);
 });
 
 export const POST = withAuth<Params>(async (request, { user, params }) => {
