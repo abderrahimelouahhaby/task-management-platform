@@ -1,21 +1,39 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { api } from "@/lib/api-client";
+import { todayDateString } from "@/lib/dates";
 import { queryKeys } from "@/lib/query-keys";
 import type { TaskStatus } from "./constants";
+import { buildTaskQueryString, type TaskFilters } from "./filters";
 import type { CreateTaskInput, UpdateTaskInput } from "./schemas";
-import type { TaskDto } from "./types";
+import type { TaskDto, TaskPage } from "./types";
 
-export function useTasks(workspaceId: string) {
+export function useTasks(workspaceId: string, filters: TaskFilters) {
+  const queryString = buildTaskQueryString(filters);
+
+  // The browser tells the server which day "today" is (the server does not know our time zone)
+  const apiParams = new URLSearchParams(queryString);
+  apiParams.set("today", todayDateString());
+
   return useQuery({
-    queryKey: queryKeys.tasks(workspaceId),
-    queryFn: () => api<TaskDto[]>(`/api/workspaces/${workspaceId}/tasks`),
+    queryKey: queryKeys.taskList(workspaceId, queryString),
+    queryFn: () => api<TaskPage>(`/api/workspaces/${workspaceId}/tasks?${apiParams.toString()}`),
+    // Keep showing the previous results while the new ones load (no flicker)
+    placeholderData: keepPreviousData,
   });
 }
 
-/** After a change in tasks, reload the tasks and the projects (projects show a task count). */
+export function useCalendarTasks(workspaceId: string, from: string, to: string) {
+  return useQuery({
+    queryKey: queryKeys.taskCalendar(workspaceId, from, to),
+    queryFn: () => api<TaskDto[]>(`/api/workspaces/${workspaceId}/calendar?from=${from}&to=${to}`),
+    placeholderData: keepPreviousData,
+  });
+}
+
+/** After a change in tasks, reload the tasks, the projects (task counts) and the labels (task counts). */
 function useRefreshTasks(workspaceId: string) {
   const queryClient = useQueryClient();
 
@@ -69,9 +87,27 @@ export function useDeleteTask(workspaceId: string) {
   });
 }
 
+// A cached task query is either a page (list) or an array (calendar)
+type TaskCache = TaskPage | TaskDto[];
+
+function patchTask(
+  data: TaskCache | undefined,
+  taskId: string,
+  patch: (task: TaskDto) => TaskDto,
+): TaskCache | undefined {
+  if (!data) {
+    return data;
+  }
+
+  const apply = (tasks: TaskDto[]) =>
+    tasks.map((task) => (task.id === taskId ? patch(task) : task));
+
+  return Array.isArray(data) ? apply(data) : { ...data, items: apply(data.items) };
+}
+
 /**
  * Changes only the status (the checkbox). It is OPTIMISTIC:
- * the screen changes immediately, and goes back if the server says no.
+ * every cached list and calendar changes immediately, and goes back if the server says no.
  */
 export function useUpdateTaskStatus(workspaceId: string) {
   const queryClient = useQueryClient();
@@ -83,32 +119,28 @@ export function useUpdateTaskStatus(workspaceId: string) {
       api<TaskDto>(`/api/tasks/${taskId}`, { method: "PATCH", body: { status } }),
 
     onMutate: async ({ taskId, status }) => {
-      // 1. Stop any reload that is running, so it cannot overwrite our change
+      // 1. Stop running reloads, so they cannot overwrite our change
       await queryClient.cancelQueries({ queryKey: key });
 
-      // 2. Remember the current list, in case we must go back
-      const previous = queryClient.getQueryData<TaskDto[]>(key);
+      // 2. Remember every cached task query, in case we must go back
+      const previous = queryClient.getQueriesData<TaskCache>({ queryKey: key });
 
-      // 3. Change the list in the cache right now
-      queryClient.setQueryData<TaskDto[]>(key, (tasks) =>
-        tasks?.map((task) =>
-          task.id === taskId
-            ? {
-                ...task,
-                status,
-                completedAt: status === "DONE" ? new Date().toISOString() : null,
-              }
-            : task,
-        ),
+      // 3. Change all of them right now
+      queryClient.setQueriesData<TaskCache>({ queryKey: key }, (data) =>
+        patchTask(data, taskId, (task) => ({
+          ...task,
+          status,
+          completedAt: status === "DONE" ? new Date().toISOString() : null,
+        })),
       );
 
       return { previous };
     },
 
     onError: (error, _variables, context) => {
-      // The server said no: put the old list back and explain
-      if (context?.previous) {
-        queryClient.setQueryData(key, context.previous);
+      // The server said no: put every cached query back and explain
+      for (const [queryKey, data] of context?.previous ?? []) {
+        queryClient.setQueryData(queryKey, data);
       }
       toast.error(error.message);
     },

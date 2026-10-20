@@ -17,3 +17,10 @@ export type TaskDto = {
   assignee: { id: string; name: string } | null;
   labels: { id: string; name: string; color: string }[];
 };
+export type TaskPage = {
+  items: TaskDto[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+};

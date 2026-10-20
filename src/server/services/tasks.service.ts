@@ -1,6 +1,9 @@
 import type { TaskPriority, TaskStatus } from "@/features/tasks/constants";
+import type { TaskListQuery } from "@/features/tasks/filters";
 import type { CreateTaskInput, UpdateTaskInput } from "@/features/tasks/schemas";
-import type { TaskDto } from "@/features/tasks/types";
+import type { TaskDto, TaskPage } from "@/features/tasks/types";
+import type { Prisma } from "@/generated/prisma/client";
+import { addDaysToCalendarDay } from "@/lib/dates";
 import { db } from "@/server/db";
 import { notFound, validationError } from "@/server/errors";
 import { assertCan, requireMembership } from "@/server/policies/access";
@@ -150,21 +153,130 @@ async function loadTaskForActor(actorId: string, taskId: string) {
 // The service functions
 // ---------------------------------------------------------------
 
-const MAX_TASKS_PER_LIST = 200;
+/** "2026-06-15" becomes midnight UTC of that day. */
+function dayStart(day: string) {
+  return new Date(`${day}T00:00:00.000Z`);
+}
 
-export async function listTasks(actorId: string, workspaceId: string): Promise<TaskDto[]> {
+/** Builds the database filter from the query. Every task must belong to THIS workspace. */
+function buildWhere(
+  actorId: string,
+  workspaceId: string,
+  query: TaskListQuery,
+): Prisma.TaskWhereInput {
+  const and: Prisma.TaskWhereInput[] = [];
+
+  if (query.q) {
+    // Case-insensitive search in the title and the description (the text is sent as a parameter)
+    and.push({
+      OR: [
+        { title: { contains: query.q, mode: "insensitive" } },
+        { description: { contains: query.q, mode: "insensitive" } },
+      ],
+    });
+  }
+
+  if (query.status === "open") {
+    and.push({ status: { not: "DONE" } });
+  } else if (query.status) {
+    and.push({ status: query.status });
+  }
+
+  if (query.priority) {
+    and.push({ priority: query.priority });
+  }
+
+  if (query.project) {
+    and.push({ projectId: query.project });
+  }
+
+  if (query.label) {
+    and.push({ labels: { some: { id: query.label } } });
+  }
+
+  if (query.assignee === "me") {
+    and.push({ assigneeId: actorId });
+  } else if (query.assignee === "unassigned") {
+    and.push({ assigneeId: null });
+  } else if (query.assignee) {
+    and.push({ assigneeId: query.assignee });
+  }
+
+  if (query.due === "none") {
+    and.push({ dueDate: null });
+  } else if (query.due) {
+    const today = query.today;
+
+    if (!today) {
+      throw validationError("today is required for this due filter.");
+    }
+
+    const start = dayStart(today);
+
+    if (query.due === "overdue") {
+      // Before today, and not finished
+      and.push({ dueDate: { lt: start }, status: { not: "DONE" } });
+    } else if (query.due === "today") {
+      and.push({ dueDate: { gte: start, lt: dayStart(addDaysToCalendarDay(today, 1)) } });
+    } else {
+      // "week": today and the next 6 days
+      and.push({ dueDate: { gte: start, lt: dayStart(addDaysToCalendarDay(today, 7)) } });
+    }
+  }
+
+  // project: { workspaceId } is ALWAYS part of the filter, so ids from other workspaces match nothing
+  return { project: { workspaceId }, AND: and };
+}
+
+/** Every sort ends with the id, so the order is stable and pages never repeat or skip tasks. */
+function buildOrderBy(sort: TaskListQuery["sort"]): Prisma.TaskOrderByWithRelationInput[] {
+  switch (sort) {
+    case "created":
+      return [{ createdAt: "desc" }, { id: "asc" }];
+    case "priority":
+      return [
+        { priority: "desc" },
+        { dueDate: { sort: "asc", nulls: "last" } },
+        { createdAt: "desc" },
+        { id: "asc" },
+      ];
+    case "title":
+      return [{ title: "asc" }, { id: "asc" }];
+    default:
+      return [{ dueDate: { sort: "asc", nulls: "last" } }, { createdAt: "desc" }, { id: "asc" }];
+  }
+}
+
+export async function listTasks(
+  actorId: string,
+  workspaceId: string,
+  query: TaskListQuery,
+): Promise<TaskPage> {
   const actor = await requireMembership(actorId, workspaceId);
 
   assertCan(actor.role, "workspace:view");
 
-  const tasks = await db.task.findMany({
-    where: { project: { workspaceId } },
-    include: taskInclude,
-    orderBy: [{ dueDate: { sort: "asc", nulls: "last" } }, { createdAt: "desc" }],
-    take: MAX_TASKS_PER_LIST,
-  });
+  const where = buildWhere(actorId, workspaceId, query);
 
-  return tasks.map(toDto);
+  // One transaction: the count and the page come from the same moment
+  const [total, tasks] = await db.$transaction([
+    db.task.count({ where }),
+    db.task.findMany({
+      where,
+      include: taskInclude,
+      orderBy: buildOrderBy(query.sort),
+      skip: (query.page - 1) * query.pageSize,
+      take: query.pageSize,
+    }),
+  ]);
+
+  return {
+    items: tasks.map(toDto),
+    total,
+    page: query.page,
+    pageSize: query.pageSize,
+    totalPages: Math.max(1, Math.ceil(total / query.pageSize)),
+  };
 }
 
 export async function createTask(

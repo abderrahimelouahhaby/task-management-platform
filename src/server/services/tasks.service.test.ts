@@ -5,6 +5,7 @@ import { createLabel } from "./labels.service";
 import { createProject, updateProject } from "./projects.service";
 import { createTask, deleteTask, listTasks, updateTask } from "./tasks.service";
 import { createTeamWorkspace } from "./workspaces.service";
+import { taskListQuerySchema } from "@/features/tasks/filters";
 
 type TestUser = Awaited<ReturnType<typeof createTestUser>>;
 
@@ -149,14 +150,17 @@ describe("creating tasks", () => {
 });
 
 describe("listing tasks", () => {
-  it("lets a viewer read the tasks of the workspace", async () => {
-    const tasks = await listTasks(viewer.id, workspaceId);
+  const defaultQuery = taskListQuerySchema.parse({});
 
-    expect(tasks.length).toBeGreaterThan(0);
+  it("lets a viewer read the tasks of the workspace", async () => {
+    const page = await listTasks(viewer.id, workspaceId, defaultQuery);
+
+    expect(page.items.length).toBeGreaterThan(0);
+    expect(page.total).toBeGreaterThan(0);
   });
 
   it("answers 'not found' when an outsider lists the tasks", async () => {
-    await expectAppError(listTasks(outsider.id, workspaceId), "NOT_FOUND");
+    await expectAppError(listTasks(outsider.id, workspaceId, defaultQuery), "NOT_FOUND");
   });
 
   it("never mixes in tasks from another workspace", async () => {
@@ -165,9 +169,12 @@ describe("listing tasks", () => {
       projectId: foreignProjectId,
     });
 
-    const tasks = await listTasks(owner.id, workspaceId);
+    const search = taskListQuerySchema.parse({ q: "Foreign task" });
+    const mine = await listTasks(owner.id, workspaceId, search);
+    const theirs = await listTasks(outsider.id, foreignWorkspaceId, search);
 
-    expect(tasks.some((task) => task.title === "Foreign task")).toBe(false);
+    expect(mine.total).toBe(0);
+    expect(theirs.total).toBe(1);
   });
 });
 
