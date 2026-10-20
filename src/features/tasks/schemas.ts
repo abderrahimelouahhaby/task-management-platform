@@ -1,15 +1,10 @@
 import { z } from "zod";
+import { isCalendarDay } from "@/lib/dates";
 import { TASK_PRIORITIES, TASK_STATUSES } from "./constants";
 
 const dueDateSchema = z
   .string()
-  .refine(
-    (value) =>
-      value === "" ||
-      (/^\d{4}-\d{2}-\d{2}$/.test(value) &&
-        new Date(`${value}T00:00:00.000Z`).toISOString().slice(0, 10) === value),
-    "Enter a valid date",
-  );
+  .refine((value) => value === "" || isCalendarDay(value), "Enter a valid date");
 
 export const createTaskSchema = z.object({
   title: z
@@ -26,6 +21,7 @@ export const createTaskSchema = z.object({
   status: z.enum(TASK_STATUSES).optional(),
   priority: z.enum(TASK_PRIORITIES).optional(),
   dueDate: dueDateSchema.nullable().optional(),
+  assigneeId: z.string().min(1).nullable().optional(),
   labelIds: z.array(z.string().min(1)).max(10, "A task can have at most 10 labels").optional(),
 });
 

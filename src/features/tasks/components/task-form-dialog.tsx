@@ -28,6 +28,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { useLabels } from "@/features/labels/hooks";
 import type { LabelDto } from "@/features/labels/types";
+import { useMembers } from "@/features/members/hooks";
+import type { MemberDto } from "@/features/members/types";
 import { useProjects } from "@/features/projects/hooks";
 import type { ProjectDto } from "@/features/projects/types";
 import { toDateInputValue } from "@/lib/dates";
@@ -36,15 +38,26 @@ import { useCreateTask, useUpdateTask } from "../hooks";
 import { createTaskSchema, type CreateTaskInput } from "../schemas";
 import type { TaskDto } from "../types";
 
+// The Select cannot have an empty value, so "no assignee" gets this text value
+const UNASSIGNED = "__unassigned__";
+
 type TaskFormDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   workspaceId: string;
   /** Pass a task to edit it, or nothing to create a new one */
   task?: TaskDto | null;
+  /** For a new task: the due date to start with ("YYYY-MM-DD") */
+  defaultDueDate?: string;
 };
 
-export function TaskFormDialog({ open, onOpenChange, workspaceId, task }: TaskFormDialogProps) {
+export function TaskFormDialog({
+  open,
+  onOpenChange,
+  workspaceId,
+  task,
+  defaultDueDate,
+}: TaskFormDialogProps) {
   const isEditing = Boolean(task);
 
   return (
@@ -59,6 +72,7 @@ export function TaskFormDialog({ open, onOpenChange, workspaceId, task }: TaskFo
         <TaskFormLoader
           workspaceId={workspaceId}
           task={task ?? null}
+          defaultDueDate={defaultDueDate}
           onDone={() => onOpenChange(false)}
         />
       </DialogContent>
@@ -69,15 +83,17 @@ export function TaskFormDialog({ open, onOpenChange, workspaceId, task }: TaskFo
 type FormProps = {
   workspaceId: string;
   task: TaskDto | null;
+  defaultDueDate?: string;
   onDone: () => void;
 };
 
-/** Loads the projects and labels first, so the form can start with the right default values. */
-function TaskFormLoader({ workspaceId, task, onDone }: FormProps) {
+/** Loads the projects, labels and members first, so the form starts with the right default values. */
+function TaskFormLoader({ workspaceId, task, defaultDueDate, onDone }: FormProps) {
   const projects = useProjects(workspaceId);
   const labels = useLabels(workspaceId);
+  const members = useMembers(workspaceId);
 
-  if (projects.isPending || labels.isPending) {
+  if (projects.isPending || labels.isPending || members.isPending) {
     return (
       <div className="space-y-4">
         <Skeleton className="h-9 w-full" />
@@ -88,11 +104,11 @@ function TaskFormLoader({ workspaceId, task, onDone }: FormProps) {
     );
   }
 
-  if (projects.isError || labels.isError) {
+  if (projects.isError || labels.isError || members.isError) {
     return (
       <Alert variant="destructive">
         <AlertDescription>
-          Could not load the projects and labels. Please try again.
+          Could not load the projects, labels and members. Please try again.
         </AlertDescription>
       </Alert>
     );
@@ -102,8 +118,10 @@ function TaskFormLoader({ workspaceId, task, onDone }: FormProps) {
     <TaskFormFields
       workspaceId={workspaceId}
       task={task}
+      defaultDueDate={defaultDueDate}
       projects={projects.data}
       labels={labels.data}
+      members={members.data}
       onDone={onDone}
     />
   );
@@ -112,9 +130,18 @@ function TaskFormLoader({ workspaceId, task, onDone }: FormProps) {
 type TaskFormFieldsProps = FormProps & {
   projects: ProjectDto[];
   labels: LabelDto[];
+  members: MemberDto[];
 };
 
-function TaskFormFields({ workspaceId, task, projects, labels, onDone }: TaskFormFieldsProps) {
+function TaskFormFields({
+  workspaceId,
+  task,
+  defaultDueDate,
+  projects,
+  labels,
+  members,
+  onDone,
+}: TaskFormFieldsProps) {
   const createTask = useCreateTask(workspaceId);
   const updateTask = useUpdateTask(workspaceId);
 
@@ -136,7 +163,8 @@ function TaskFormFields({ workspaceId, task, projects, labels, onDone }: TaskFor
       projectId: task?.projectId ?? availableProjects[0]?.id ?? "",
       status: task?.status ?? "TODO",
       priority: task?.priority ?? "MEDIUM",
-      dueDate: toDateInputValue(task?.dueDate ?? null),
+      dueDate: task ? toDateInputValue(task.dueDate) : (defaultDueDate ?? ""),
+      assigneeId: task?.assignee?.id ?? null,
       labelIds: task?.labels.map((label) => label.id) ?? [],
     },
   });
@@ -263,15 +291,43 @@ function TaskFormFields({ workspaceId, task, projects, labels, onDone }: TaskFor
         </div>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="task-due">Due date (optional)</Label>
-        <Input
-          id="task-due"
-          type="date"
-          aria-invalid={Boolean(errors.dueDate)}
-          {...register("dueDate")}
-        />
-        <FieldError message={errors.dueDate?.message} />
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="task-due">Due date (optional)</Label>
+          <Input
+            id="task-due"
+            type="date"
+            aria-invalid={Boolean(errors.dueDate)}
+            {...register("dueDate")}
+          />
+          <FieldError message={errors.dueDate?.message} />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="task-assignee">Assignee</Label>
+          <Controller
+            control={control}
+            name="assigneeId"
+            render={({ field }) => (
+              <Select
+                value={field.value ?? UNASSIGNED}
+                onValueChange={(value) => field.onChange(value === UNASSIGNED ? null : value)}
+              >
+                <SelectTrigger id="task-assignee" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={UNASSIGNED}>Unassigned</SelectItem>
+                  {members.map((member) => (
+                    <SelectItem key={member.userId} value={member.userId}>
+                      {member.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          />
+        </div>
       </div>
 
       <div className="space-y-2">

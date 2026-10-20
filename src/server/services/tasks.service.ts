@@ -112,6 +112,18 @@ async function requireLabelsInWorkspace(labelIds: string[], workspaceId: string)
   return uniqueIds;
 }
 
+// the assignee must be a member of THIS workspace
+async function requireAssigneeInWorkspace(assigneeId: string, workspaceId: string) {
+  const membership = await db.membership.findUnique({
+    where: { userId_workspaceId: { userId: assigneeId, workspaceId } },
+    select: { id: true },
+  });
+
+  if (!membership) {
+    throw validationError("That person is not a member of this workspace.");
+  }
+}
+
 /** Loads a task, then checks that the user belongs to its workspace. Non-members get a 404. */
 async function loadTaskForActor(actorId: string, taskId: string) {
   const task = await db.task.findUnique({
@@ -167,6 +179,10 @@ export async function createTask(
   await requireActiveProject(input.projectId, workspaceId);
   const labelIds = await requireLabelsInWorkspace(input.labelIds ?? [], workspaceId);
 
+  if (input.assigneeId) {
+    await requireAssigneeInWorkspace(input.assigneeId, workspaceId);
+  }
+
   const status = input.status ?? "TODO";
 
   const task = await db.task.create({
@@ -179,6 +195,7 @@ export async function createTask(
       completedAt: status === "DONE" ? new Date() : null,
       projectId: input.projectId,
       createdById: actorId,
+      assigneeId: input.assigneeId ?? null,
       labels: { connect: labelIds.map((id) => ({ id })) },
     },
     include: taskInclude,
@@ -210,6 +227,11 @@ export async function updateTask(
       ? undefined
       : await requireLabelsInWorkspace(input.labelIds, workspaceId);
 
+  //null clears the assignee (no check needed), a user id must be a member
+  if (input.assigneeId) {
+    await requireAssigneeInWorkspace(input.assigneeId, workspaceId);
+  }
+
   const updated = await db.task.update({
     where: { id: taskId },
     data: {
@@ -218,6 +240,7 @@ export async function updateTask(
       priority: input.priority,
       dueDate: toDueDate(input.dueDate),
       projectId: input.projectId,
+      assigneeId: input.assigneeId, // (undefined = unchanged, null = unassign)
       ...statusChanges(task.status, input.status),
       ...(labelIds ? { labels: { set: labelIds.map((id) => ({ id })) } } : {}),
     },

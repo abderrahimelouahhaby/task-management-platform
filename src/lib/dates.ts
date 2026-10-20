@@ -34,3 +34,31 @@ export function formatDueDate(dueIso: string): string {
     timeZone: "UTC",
   }).format(new Date(dueIso));
 }
+
+/** True only for a real calendar day written as YYYY-MM-DD. Never throws. */
+export function isCalendarDay(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return false;
+  }
+
+  const date = new Date(`${value}T00:00:00.000Z`);
+
+  // An impossible day gives an Invalid Date (NaN). A rolled-over day (like 31 February) changes the text.
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+}
+
+/** Adds (or subtracts) days to a "YYYY-MM-DD" text. Expects a valid day. */
+export function addDaysToCalendarDay(day: string, days: number): string {
+  const date = new Date(`${day}T00:00:00.000Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+
+  return date.toISOString().slice(0, 10);
+}
+
+/** Number of days from one "YYYY-MM-DD" to another (negative if the second is earlier). */
+export function daysBetween(from: string, to: string): number {
+  const start = Date.parse(`${from}T00:00:00.000Z`);
+  const end = Date.parse(`${to}T00:00:00.000Z`);
+
+  return Math.round((end - start) / 86_400_000);
+}
