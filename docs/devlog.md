@@ -28,3 +28,13 @@
   - The server must check everything, because the UI only hides buttons. A user who is not in a workspace gets a 404 instead of a 403, so the workspace's existence is never revealed. Lookups are scoped by workspace, so ids from another workspace never match (IDOR). I tested this by calling the API by hand as a Viewer and as an Admin.
   - Clean layers help a lot: thin routes (login check, Zod validation, then call a service), services that check membership and role before doing the work, and one shared `can()` function used by both the server and the UI. TanStack Query then handles loading, caching and refreshing the lists after every change.
 - Plan for tomorrow: tasks CRUD, labels, and the task list view.
+
+## Day 4
+
+- Done: labels (service, API, tests, Settings screen), date helpers with unit tests, task schemas, task service and API with the Member ownership rule, integration tests for tasks, task list screen, task create/edit dialog, status/priority badges, due date colors, label picker, and an optimistic status change with rollback.
+- Blocked / confusing:how optimistic updates work, why due dates are stored as midnight UTC.
+- Learned:
+  - Ids inside the request body are just as dangerous as ids in the URL. A project or label id sent by the browser must be checked to belong to the same workspace, otherwise a task could be linked to another workspace's data. I wrote tests that try exactly this attack. I also pick fields one by one when saving (a whitelist), so a client can never set fields like `createdById` or `completedAt`.
+  - An optimistic update changes the screen first and asks the server afterwards. If the server refuses, the cache goes back to the saved copy and a toast explains why. The steps are: cancel running reloads, save a copy, change the cache, roll back on error, and always reload the real data at the end.
+  - A due date is a calendar day, not a moment in time. I store it as midnight UTC, always format it in UTC, and decide overdue, today or later by comparing date text (`YYYY-MM-DD`). This stops dates from shifting by one day in different time zones.
+- Plan for tomorrow: assigning tasks, search and filters in the URL, and the calendar view.
