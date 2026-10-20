@@ -1,5 +1,6 @@
 import type { WorkspaceSummary } from "@/features/workspaces/types";
 import { MobileNav } from "./mobile-nav";
+import { SidebarToggle } from "./sidebar-toggle";
 import { ThemeToggle } from "./theme-toggle";
 import { UserMenu } from "./user-menu";
 
@@ -13,6 +14,7 @@ export function Topbar({ user, workspaces, currentWorkspaceId }: TopbarProps) {
   return (
     <header className="sticky top-0 z-10 flex h-14 items-center gap-2 border-b bg-background px-4">
       <MobileNav workspaces={workspaces} currentWorkspaceId={currentWorkspaceId} />
+      <SidebarToggle />
       <div className="flex-1" />
       <ThemeToggle />
       <UserMenu user={user} />

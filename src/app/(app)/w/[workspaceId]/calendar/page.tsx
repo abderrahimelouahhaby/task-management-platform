@@ -1,13 +1,22 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
-import { PageHeader } from "@/components/shared/page-header";
+import { Skeleton } from "@/components/ui/skeleton";
+import { CalendarView } from "@/features/tasks/components/calendar-view";
+import { getWorkspaceContext } from "@/server/workspace-context";
 
 export const metadata: Metadata = { title: "Calendar" };
 
-export default function CalendarPage() {
+type CalendarPageProps = {
+  params: Promise<{ workspaceId: string }>;
+};
+
+export default async function CalendarPage({ params }: CalendarPageProps) {
+  const { workspaceId } = await params;
+  const { user, role } = await getWorkspaceContext(workspaceId);
+
   return (
-    <>
-      <PageHeader title="Calendar" description="See your deadlines by date." />
-      <p className="text-sm text-muted-foreground">Coming soon.</p>
-    </>
+    <Suspense fallback={<Skeleton className="h-96 w-full" />}>
+      <CalendarView workspaceId={workspaceId} role={role} currentUserId={user.id} />
+    </Suspense>
   );
 }
