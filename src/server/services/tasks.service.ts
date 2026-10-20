@@ -7,6 +7,7 @@ import { addDaysToCalendarDay } from "@/lib/dates";
 import { db } from "@/server/db";
 import { notFound, validationError } from "@/server/errors";
 import { assertCan, requireMembership } from "@/server/policies/access";
+import type { CalendarRange } from "@/features/tasks/calendar";
 
 // ---------------------------------------------------------------
 // Shape of the data we read and send
@@ -374,4 +375,31 @@ export async function deleteTask(actorId: string, taskId: string) {
   await db.task.delete({ where: { id: taskId } });
 
   return { id: taskId };
+}
+const MAX_CALENDAR_TASKS = 500;
+
+/** Tasks whose due date falls between two days (both included). Used by the calendar. */
+export async function listTasksInRange(
+  actorId: string,
+  workspaceId: string,
+  range: CalendarRange,
+): Promise<TaskDto[]> {
+  const actor = await requireMembership(actorId, workspaceId);
+
+  assertCan(actor.role, "workspace:view");
+
+  const tasks = await db.task.findMany({
+    where: {
+      project: { workspaceId },
+      dueDate: {
+        gte: dayStart(range.from),
+        lt: dayStart(addDaysToCalendarDay(range.to, 1)),
+      },
+    },
+    include: taskInclude,
+    orderBy: [{ dueDate: "asc" }, { priority: "desc" }, { createdAt: "desc" }, { id: "asc" }],
+    take: MAX_CALENDAR_TASKS,
+  });
+
+  return tasks.map(toDto);
 }

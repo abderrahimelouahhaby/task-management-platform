@@ -1,5 +1,5 @@
+import { DesktopSidebar } from "@/components/layout/desktop-sidebar";
 import { QueryProvider } from "@/components/layout/query-provider";
-import { Sidebar } from "@/components/layout/sidebar";
 import { Topbar } from "@/components/layout/topbar";
 import { listWorkspacesForUser } from "@/server/services/workspaces.service";
 import { getWorkspaceContext } from "@/server/workspace-context";
@@ -19,9 +19,7 @@ export default async function WorkspaceLayout({ children, params }: WorkspaceLay
   return (
     <QueryProvider>
       <div className="flex min-h-screen">
-        <aside className="hidden w-64 shrink-0 border-r md:block">
-          <Sidebar workspaces={workspaces} currentWorkspaceId={workspaceId} />
-        </aside>
+        <DesktopSidebar workspaces={workspaces} currentWorkspaceId={workspaceId} />
 
         <div className="flex min-w-0 flex-1 flex-col">
           <Topbar
