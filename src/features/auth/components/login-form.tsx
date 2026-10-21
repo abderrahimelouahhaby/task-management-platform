@@ -106,7 +106,7 @@ export function LoginForm() {
           </Button>
           <p className="text-sm text-muted-foreground">
             No account?{" "}
-            <Link href="/signup" className="font-medium text-primary hover:underline">
+            <Link href="/signup" className="font-medium text-primary-text hover:underline">
               Sign up
             </Link>
           </p>

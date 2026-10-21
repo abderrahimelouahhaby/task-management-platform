@@ -9,8 +9,8 @@ type UserAvatarProps = {
 
 export function UserAvatar({ name, className }: UserAvatarProps) {
   return (
-    <Avatar className={cn("size-8", className)}>
-      <AvatarFallback className="bg-primary/10 text-xs font-medium text-primary">
+    <Avatar aria-hidden="true" className={cn("size-8", className)}>
+      <AvatarFallback className="bg-primary/10 text-xs font-medium text-primary-text">
         {getInitials(name)}
       </AvatarFallback>
     </Avatar>

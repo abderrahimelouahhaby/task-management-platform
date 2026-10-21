@@ -233,6 +233,7 @@ function CalendarContent({ workspaceId, role, currentUserId }: CalendarViewProps
                 {dayTasks.slice(0, MAX_CHIPS).map((task) => (
                   <span
                     key={task.id}
+                    aria-hidden="true"
                     className={cn(
                       "hidden w-full truncate rounded border-l-2 bg-muted px-1.5 py-0.5 text-xs md:block",
                       PRIORITY_BAR[task.priority],
@@ -243,7 +244,10 @@ function CalendarContent({ workspaceId, role, currentUserId }: CalendarViewProps
                   </span>
                 ))}
                 {dayTasks.length > MAX_CHIPS ? (
-                  <span className="hidden text-xs text-muted-foreground md:block">
+                  <span
+                    aria-hidden="true"
+                    className="hidden text-xs text-muted-foreground md:block"
+                  >
                     +{dayTasks.length - MAX_CHIPS} more
                   </span>
                 ) : null}
