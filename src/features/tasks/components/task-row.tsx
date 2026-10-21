@@ -39,6 +39,7 @@ export function TaskRow({
   return (
     <li className="flex flex-wrap items-center gap-x-4 gap-y-2 py-3">
       <Checkbox
+        className="size-5"
         checked={done}
         disabled={!canEdit}
         onCheckedChange={(checked) => onToggleDone(checked === true)}

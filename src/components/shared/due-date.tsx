@@ -22,7 +22,7 @@ export function DueDate({ dueDate, done = false }: DueDateProps) {
 
   if (state === "today") {
     return (
-      <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-600 dark:text-amber-400">
+      <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-700 dark:text-amber-400">
         <Clock className="size-3.5" aria-hidden="true" />
         Today
       </span>

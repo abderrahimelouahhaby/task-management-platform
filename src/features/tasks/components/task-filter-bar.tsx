@@ -131,7 +131,7 @@ export function TaskFilterBar({
         ) : null}
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
         <FilterSelect
           label="Filter by status"
           allLabel="All statuses"

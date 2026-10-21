@@ -18,6 +18,13 @@ export default async function WorkspaceLayout({ children, params }: WorkspaceLay
 
   return (
     <QueryProvider>
+      <a
+        href="#main-content"
+        className="sr-only z-50 rounded-md bg-background px-4 py-2 text-sm font-medium text-foreground focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:ring-2 focus:ring-ring"
+      >
+        Skip to main content
+      </a>
+
       <div className="flex min-h-screen">
         <DesktopSidebar workspaces={workspaces} currentWorkspaceId={workspaceId} />
 
@@ -27,7 +34,7 @@ export default async function WorkspaceLayout({ children, params }: WorkspaceLay
             workspaces={workspaces}
             currentWorkspaceId={workspaceId}
           />
-          <main className="flex-1 p-4 md:p-6">
+          <main id="main-content" tabIndex={-1} className="flex-1 p-4 outline-none md:p-6">
             <div className="mx-auto w-full max-w-6xl">{children}</div>
           </main>
         </div>
