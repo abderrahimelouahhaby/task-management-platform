@@ -20,12 +20,15 @@ type FilterSelectProps = {
 };
 
 export function FilterSelect({ label, allLabel, value, options, onChange }: FilterSelectProps) {
+  // The text the dropdown shows right now. The name must contain it.
+  const shownText = options.find((option) => option.value === value)?.label ?? allLabel;
+
   return (
     <Select
       value={value ?? ALL}
       onValueChange={(next) => onChange(next === ALL ? undefined : next)}
     >
-      <SelectTrigger className="w-full sm:w-40" aria-label={label}>
+      <SelectTrigger className="w-full sm:w-40" aria-label={`${label}: ${shownText}`}>
         <SelectValue />
       </SelectTrigger>
       <SelectContent>

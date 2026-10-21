@@ -26,7 +26,7 @@ export function UpcomingDeadlines({ workspaceId, tasks }: UpcomingDeadlinesProps
         <CardAction>
           <Link
             href={`/w/${workspaceId}/tasks`}
-            className="rounded-sm text-sm font-medium text-primary hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            className="rounded-sm text-sm font-medium text-primary-text hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
           >
             View all tasks
           </Link>

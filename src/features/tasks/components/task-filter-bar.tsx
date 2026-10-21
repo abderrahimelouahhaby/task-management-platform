@@ -95,7 +95,7 @@ export function TaskFilterBar({
     setSearch("");
     clearFilters();
   }
-
+  const sortLabel = SORT_OPTIONS.find((option) => option.value === filters.sort)?.label ?? "Sort";
   return (
     <div className="mb-4 space-y-3">
       <div className="flex flex-wrap items-center gap-2">
@@ -179,7 +179,8 @@ export function TaskFilterBar({
           value={filters.sort}
           onValueChange={(value) => setFilters({ sort: value as TaskFilters["sort"] })}
         >
-          <SelectTrigger className="w-full sm:w-44" aria-label="Sort tasks">
+          <SelectTrigger className="w-full sm:w-44" aria-label={`${sortLabel}, change sort order`}>
+            {" "}
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

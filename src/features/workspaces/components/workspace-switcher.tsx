@@ -47,7 +47,7 @@ export function WorkspaceSwitcher({
           <Button
             variant="outline"
             className="w-full justify-between"
-            aria-label="Switch workspace"
+            aria-label={`${current?.name ?? "Select workspace"}, switch workspace`}
           >
             <span className="truncate">{current?.name ?? "Select workspace"}</span>
             <ChevronsUpDown className="size-4 shrink-0 opacity-50" />
