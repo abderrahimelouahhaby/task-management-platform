@@ -87,22 +87,30 @@ export function useDeleteTask(workspaceId: string) {
   });
 }
 
-// A cached task query is either a page (list) or an array (calendar)
-type TaskCache = TaskPage | TaskDto[];
+function isTaskPage(data: unknown): data is TaskPage {
+  return (
+    typeof data === "object" &&
+    data !== null &&
+    "items" in data &&
+    Array.isArray((data as TaskPage).items)
+  );
+}
 
-function patchTask(
-  data: TaskCache | undefined,
-  taskId: string,
-  patch: (task: TaskDto) => TaskDto,
-): TaskCache | undefined {
-  if (!data) {
-    return data;
-  }
-
+/** Changes one task inside a cached query. A query can hold a page (list), an array (calendar), or something else. */
+function patchTask(data: unknown, taskId: string, patch: (task: TaskDto) => TaskDto): unknown {
   const apply = (tasks: TaskDto[]) =>
     tasks.map((task) => (task.id === taskId ? patch(task) : task));
 
-  return Array.isArray(data) ? apply(data) : { ...data, items: apply(data.items) };
+  if (Array.isArray(data)) {
+    return apply(data as TaskDto[]);
+  }
+
+  if (isTaskPage(data)) {
+    return { ...data, items: apply(data.items) };
+  }
+
+  // Anything else (like the dashboard numbers) is left alone and reloaded when the request ends
+  return data;
 }
 
 /**
@@ -123,10 +131,10 @@ export function useUpdateTaskStatus(workspaceId: string) {
       await queryClient.cancelQueries({ queryKey: key });
 
       // 2. Remember every cached task query, in case we must go back
-      const previous = queryClient.getQueriesData<TaskCache>({ queryKey: key });
+      const previous = queryClient.getQueriesData({ queryKey: key });
 
       // 3. Change all of them right now
-      queryClient.setQueriesData<TaskCache>({ queryKey: key }, (data) =>
+      queryClient.setQueriesData({ queryKey: key }, (data) =>
         patchTask(data, taskId, (task) => ({
           ...task,
           status,

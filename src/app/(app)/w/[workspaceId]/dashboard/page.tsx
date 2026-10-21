@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/shared/page-header";
+import { DashboardView } from "@/features/dashboard/components/dashboard-view";
 import { getWorkspaceContext } from "@/server/workspace-context";
 
 export const metadata: Metadata = { title: "Dashboard" };
@@ -19,7 +20,7 @@ export default async function DashboardPage({ params }: DashboardPageProps) {
         title={`Welcome back, ${firstName}`}
         description={`Overview of ${workspace.name}.`}
       />
-      <p className="text-sm text-muted-foreground">Coming on Day 6.</p>
+      <DashboardView workspaceId={workspaceId} />
     </>
   );
 }

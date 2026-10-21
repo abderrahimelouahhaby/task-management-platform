@@ -13,7 +13,7 @@ import type { CalendarRange } from "@/features/tasks/calendar";
 // Shape of the data we read and send
 // ---------------------------------------------------------------
 
-const taskInclude = {
+export const taskInclude = {
   project: { select: { id: true, name: true, color: true } },
   assignee: { select: { id: true, name: true } },
   labels: { select: { id: true, name: true, color: true }, orderBy: { name: "asc" } },
@@ -34,7 +34,7 @@ type TaskRow = {
   labels: { id: string; name: string; color: string }[];
 };
 
-function toDto(task: TaskRow): TaskDto {
+export function toDto(task: TaskRow): TaskDto {
   return {
     id: task.id,
     title: task.title,
@@ -155,7 +155,7 @@ async function loadTaskForActor(actorId: string, taskId: string) {
 // ---------------------------------------------------------------
 
 /** "2026-06-15" becomes midnight UTC of that day. */
-function dayStart(day: string) {
+export function dayStart(day: string) {
   return new Date(`${day}T00:00:00.000Z`);
 }
 

@@ -3,10 +3,11 @@ export const queryKeys = {
   members: (workspaceId: string) => ["workspaces", workspaceId, "members"] as const,
   projects: (workspaceId: string) => ["workspaces", workspaceId, "projects"] as const,
   labels: (workspaceId: string) => ["workspaces", workspaceId, "labels"] as const,
-  // Every task query starts with this key, so one invalidation reloads lists and calendars together
+  // Every task query starts with this key, so one invalidation reloads lists, calendars and the dashboard
   tasks: (workspaceId: string) => ["workspaces", workspaceId, "tasks"] as const,
   taskList: (workspaceId: string, queryString: string) =>
     ["workspaces", workspaceId, "tasks", "list", queryString] as const,
   taskCalendar: (workspaceId: string, from: string, to: string) =>
     ["workspaces", workspaceId, "tasks", "calendar", from, to] as const,
+  dashboard: (workspaceId: string) => ["workspaces", workspaceId, "tasks", "dashboard"] as const,
 };
