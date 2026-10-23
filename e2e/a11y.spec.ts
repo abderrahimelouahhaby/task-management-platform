@@ -30,7 +30,7 @@ async function waitUntilLoaded(page: Page) {
 
 for (const scheme of ["light", "dark"] as const) {
   test.describe(`accessibility scan (${scheme} mode)`, () => {
-    test.use({ colorScheme: scheme });
+    test.use({ colorScheme: scheme, bypassCSP: true });
 
     test("the login page has no serious problems", async ({ page }) => {
       await page.goto("/login");
