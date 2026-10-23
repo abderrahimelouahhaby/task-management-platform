@@ -43,7 +43,11 @@ export function LoginForm() {
 
     if (error) {
       // Same message for "unknown email" and "wrong password" (prevents account guessing)
-      setServerError("Invalid email or password");
+      setServerError(
+        error.status === 429
+          ? "Too many attempts. Please wait a minute and try again."
+          : "Invalid email or password",
+      );
       return;
     }
 
