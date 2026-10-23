@@ -44,7 +44,11 @@ export function SignupForm() {
     });
 
     if (error) {
-      setServerError("We could not create your account. Try a different email, or log in.");
+      setServerError(
+        error.status === 429
+          ? "Too many attempts. Please wait a minute and try again."
+          : "We could not create your account. Try a different email, or log in.",
+      );
       return;
     }
 
