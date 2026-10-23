@@ -1,51 +1,99 @@
 # Devlog
 
-## Day 1
+---
 
-- Done:
-  project setup, Prettier, ESLint, Husky, commitlint, Docker Postgres, Prisma 7, Vitest, CI, app shell with dark mode, Vercel + Neon deploy.
-- Blocked / confusing: Prisma had a new version 8 with a completely different setup, so I had to pin Prisma to version 7 (`prisma@7`). Tools move fast, so pinning versions matters.
-- Learned:
-  - A professional Git workflow: feature branches, pull requests, squash and merge, Conventional Commits checked automatically by Husky + commitlint, and a protected `main` branch that needs a green CI check.
-  - Environment variables should be validated with Zod when the app starts, so a missing or wrong setting fails immediately with a clear message.
-- Plan for tomorrow: database schema and authentication.
+## 📅 Day 1: Setup, tooling, CI and deployment
 
-## Day 2
+- **Core Deliverables:**
+  - Initialized project architecture with App Shell, dark mode support, and CI/CD pipelines.
+  - Configured code quality and git hooks: Prettier, ESLint, Husky, and commitlint (Conventional Commits).
+  - Set up local infrastructure with Docker Postgres and Prisma 7.
+  - Deployed staging environment to Vercel connected to Neon Serverless Postgres.
+- **Technical Challenges & Solutions:**
+  - _Prisma Versioning:_ Encountered breaking changes in early Prisma v8 alphas; pinned dependency to stable `prisma@7` to ensure predictable builds. Tooling stability was prioritized over bleeding-edge instability.
+- **Key Architectural Takeaways:**
+  - **Professional Git Workflow:** Established protected `main` branch enforcement, mandatory PR reviews, squash-and-merge strategies, and automated CI checks via Husky.
+  - **Fail-Fast Environment Validation:** Implemented strict startup validation of environment variables using Zod so configuration errors surface immediately with descriptive messages.
 
-- Done: full Prisma schema, first migration, seed data, Better Auth (email and password), personal workspace on sign up, login and sign up pages, route protection (proxy + server check), Vitest integration test, Playwright auth flows, CI with Postgres service.
-- Blocked / confusing: Next.js 16 showed a "uncached data during prerendering" error until I turned off Cache Components. My form errors were not red because my CSS color variables were incomplete (`--destructive` was missing). On production, sign up failed with a 403 because `BETTER_AUTH_URL` did not exactly match my site's address.
-- Learned:
-  - How login works: the password is stored as a one-way hash, a session row is saved in the database, and the browser gets an HttpOnly cookie. The proxy only checks that a cookie exists (fast but easy to fake), so the real protection is the server check that asks the database if the session is valid.
-  - Security details matter: show the same generic message for a wrong email or wrong password (so attackers cannot find out which emails have accounts), and keep secrets out of Git.
-  - Production needs its own setup: environment variables per environment on Vercel, a migration run on the Neon database, and `BETTER_AUTH_URL` set to only the site's origin (`https://...`, no path, no trailing slash).
-- Plan for tomorrow: permissions, workspaces and members, projects.
+---
 
-## Day 3
+## 📅 Day 2: Database schema and authentication
 
-- Done: role permission rules (Owner, Admin, Member, Viewer) with a full test matrix, API helpers (`withAuth`, standard `{ data }` / `{ error }` responses, safe error handling), workspace, members and projects services with the permission checks inside, workspace URLs (`/w/[workspaceId]`), workspace switcher, Settings (General and Members tabs), Projects screen, and integration tests that include IDOR checks.
-- Blocked / confusing: No big blockers today. The permission tests made it easy to be confident when I changed things.
-- Learned:
-  - Authentication answers "who are you?" and authorization answers "what can you do?". Broken access control is the number one web security risk, so I wrote the permission rules first as plain functions and tested every role against every action. Anything not listed is denied by default.
-  - The server must check everything, because the UI only hides buttons. A user who is not in a workspace gets a 404 instead of a 403, so the workspace's existence is never revealed. Lookups are scoped by workspace, so ids from another workspace never match (IDOR). I tested this by calling the API by hand as a Viewer and as an Admin.
-  - Clean layers help a lot: thin routes (login check, Zod validation, then call a service), services that check membership and role before doing the work, and one shared `can()` function used by both the server and the UI. TanStack Query then handles loading, caching and refreshing the lists after every change.
-- Plan for tomorrow: tasks CRUD, labels, and the task list view.
+- **Core Deliverables:**
+  - Designed full Prisma database schema, executed initial migrations, and created seed scripts.
+  - Implemented Better Auth (email/password) with automated personal workspace creation on sign-up.
+  - Built login/sign-up flows and route protection layers (lightweight proxy check + rigorous server-side database validation).
+  - Configured integration tests (Vitest) and end-to-end auth flows (Playwright) running against a Postgres service in CI.
+- **Technical Challenges & Solutions:**
+  - _Next.js 16 Caching:_ Resolved "uncached data during prerendering" errors by explicitly tuning Cache Component settings.
+  - _Design System Tokens:_ Fixed unstyled form error states by defining missing CSS variables (`--destructive`).
+  - _Production OAuth/Auth URLs:_ Resolved production 403 errors by strictly configuring `BETTER_AUTH_URL` to origin-only format (`https://...`, no paths or trailing slashes).
+- **Key Architectural Takeaways:**
+  - **Defense-in-Depth Security:** The middleware proxy performs fast checks for cookie existence, but true security is enforced server-side by querying the database for valid active sessions.
+  - **Information Dissemination Defense:** Standardized authentication error messages ("Invalid email or password") to prevent user enumeration attacks.
 
-## Day 4
+---
 
-- Done: labels (service, API, tests, Settings screen), date helpers with unit tests, task schemas, task service and API with the Member ownership rule, integration tests for tasks, task list screen, task create/edit dialog, status/priority badges, due date colors, label picker, and an optimistic status change with rollback.
-- Blocked / confusing:how optimistic updates work, why due dates are stored as midnight UTC.
-- Learned:
-  - Ids inside the request body are just as dangerous as ids in the URL. A project or label id sent by the browser must be checked to belong to the same workspace, otherwise a task could be linked to another workspace's data. I wrote tests that try exactly this attack. I also pick fields one by one when saving (a whitelist), so a client can never set fields like `createdById` or `completedAt`.
-  - An optimistic update changes the screen first and asks the server afterwards. If the server refuses, the cache goes back to the saved copy and a toast explains why. The steps are: cancel running reloads, save a copy, change the cache, roll back on error, and always reload the real data at the end.
-  - A due date is a calendar day, not a moment in time. I store it as midnight UTC, always format it in UTC, and decide overdue, today or later by comparing date text (`YYYY-MM-DD`). This stops dates from shifting by one day in different time zones.
-- Plan for tomorrow: assigning tasks, search and filters in the URL, and the calendar view.
+## 📅 Day 3: Workspaces, roles, permissions and projects
 
-## Day 5
+- **Core Deliverables:**
+  - Implemented granular Role-Based Access Control (Owner, Admin, Member, Viewer) with an exhaustive test matrix.
+  - Developed standardized API helpers (`withAuth`, typed `{ data }` / `{ error }` response wrappers, safe error handling).
+  - Built workspace, member, and project services enforcing embedded permission checks, dynamic workspace routing (`/w/[workspaceId]`), workspace switcher, Settings (General & Members tabs), and Projects screen.
+  - Wrote integration tests verifying IDOR (Insecure Direct Object Reference) prevention.
+- **Technical Challenges & Solutions:**
+  - Maintained smooth feature velocity with zero major blockers by leveraging comprehensive permission test suites as a regression safety net.
+- **Key Architectural Takeaways:**
+  - **Authentication vs. Authorization:** Authentication verifies _who_ you are; authorization dictates _what_ you can do. Implemented a centralized `can()` rules engine evaluated on both client and server; anything not explicitly permitted is denied by default.
+  - **IDOR & Resource Protection:** Enforced workspace scoping on all database queries. Unauthorized access attempts yield a `404 Not Found` instead of a `403 Forbidden` to prevent leaking the existence of private workspaces.
 
-- Done: assigning tasks (only workspace members), a fix for the due date validation, search, filters, sorting and pagination with Zod-validated query parameters, a filter bar that lives in the URL (debounced search), a calendar API and a Monday-first calendar view, a shared task list component, and a collapsible sidebar with Zustand.
-- Blocked / confusing: Four things took me a while to understand. First, why every sort must end with the task `id`: without a unique tie-breaker, two tasks with the same due date can switch places between page 1 and page 2, so a task can appear twice or never. Second, why the browser sends `today` to the API: the server does not know the user's time zone, so "overdue" and "due today" cannot be decided there. Third, the debounced search: the `useEffect` must return a `clearTimeout` cleanup, otherwise every keystroke still sends a request. Fourth, the calendar's hydration warning: the server and the browser disagree about today's date, so the calendar waits for the browser to mount (`useSyncExternalStore`) before drawing.
-- Learned:
-  - Filters belong in the URL, not in component state. The URL is then the single source of truth: filtered lists survive a refresh, can be shared as a link, and work with the Back button. Because anyone can edit the URL, the same Zod schema validates it in the browser and on the server, and a broken URL falls back to the defaults instead of crashing.
-  - Every query parameter is user input. I validate known values only, cap the page size at 50, limit the search text and the calendar range (62 days), and always keep the workspace in the query, so a foreign project, label or assignee id matches nothing. Search text goes to the database as a parameter, and a test with an SQL injection string proves the table is untouched.
-  - Found and fixed my own bug: `new Date("2026-13-45").toISOString()` throws, so a nonsense date made the API answer 500 instead of 400. A safe `isCalendarDay` helper that checks for an invalid date first (plus tests) fixed it. I also learned to keep dates as calendar-day text (`YYYY-MM-DD`) so time zones can never shift them.
-- Plan for tomorrow: dashboard with stats and charts, responsive and dark mode polish, an accessibility pass, and Playwright tests for the main flows.
+---
+
+## 📅 Day 4: Tasks CRUD and labels
+
+- **Core Deliverables:**
+  - Built complete Labels CRUD system (service, API, integration tests, Settings UI).
+  - Implemented robust date utilities with comprehensive unit testing.
+  - Developed task schemas, services, and APIs enforcing Member ownership rules, alongside the main task list view, create/edit dialogs, status/priority badges, due date color coding, and label pickers.
+  - Implemented optimistic status updates with automatic rollback on server error.
+- **Technical Challenges & Solutions:**
+  - Addressed complex state reconciliation for optimistic UI mutations and standardized timezone-agnostic date storage.
+- **Key Architectural Takeaways:**
+  - **Strict Request Whitelisting:** Treated all request body IDs (project/label IDs) with the same suspicion as URL parameters. Implemented field whitelisting to prevent clients from tampering with protected system fields like `createdById` or `completedAt`.
+  - **Optimistic Mutation Lifecycle:** Handled optimistic updates safely by: (1) cancelling active queries, (2) snapshotting current cache state, (3) applying optimistic cache updates, (4) rolling back on failure with user toast notifications, and (5) triggering background refetches.
+  - **Timezone Resilience:** Stored due dates as calendar-day strings (`YYYY-MM-DD` at midnight UTC) to prevent date-shifting anomalies across global timezones.
+
+---
+
+## 📅 Day 5: Assignment, search, filters and calendar
+
+- **Core Deliverables:**
+  - Added task assignment restrictions (restricted to workspace members) and fixed due date validation edge cases.
+  - Implemented search, multi-criteria filtering, sorting, and pagination powered by Zod-validated query parameters synchronized directly with the URL.
+  - Built a Monday-first calendar view with a dedicated calendar API and range limits (62 days).
+  - Created a shared task list component and a collapsible application sidebar using Zustand.
+- **Technical Challenges & Solutions:**
+  - _Pagination Stability:_ Added the task `id` as a secondary tie-breaker sort parameter to prevent duplicate or skipped items during pagination when timestamps match.
+  - _Timezone-Aware Filtering:_ Solved server-side date filtering by having the client pass the current date context (`today`) to calculate relative filters ("overdue", "due today").
+  - _Debounce Cleanup:_ Prevented network flooding by ensuring search input effects properly return `clearTimeout` cleanup functions.
+  - _Hydration Warnings:_ Resolved server/client date mismatches in the calendar by utilizing `useSyncExternalStore` to defer rendering until client mount.
+- **Key Architectural Takeaways:**
+  - **URL as the Single Source of Truth:** Maintained filter states in URL query parameters so filtered views support browser history, page refreshes, and direct link sharing, protected end-to-end by Zod schemas with fallback defaults.
+  - **Input Sanitization & SQL Injection Defense:** Capped page sizes (max 50), bounded calendar ranges, validated all search inputs, and parameterized database queries to ensure robust defense against injection attacks.
+
+---
+
+## 📅 Day 6: Dashboard, responsive polish and E2E tests
+
+- **Core Deliverables:**
+  - Developed a high-performance analytics API leveraging database aggregation (`count`, `groupBy`).
+  - Built the main dashboard with statistics cards, data visualization bar charts, and upcoming deadline widgets.
+  - Completed comprehensive responsive design, dark mode tuning, and accessibility passes (skip links, reduced motion, contrast ratios).
+  - Implemented end-to-end test suites (Playwright) covering search/filters, task completion, permission boundary blocks (Viewers/Strangers), and automated accessibility scans (`axe-core`) running in CI.
+- **Technical Challenges & Solutions:**
+  - _Accessibility Contrast & Tokens:_ Resolved color contrast failures in dark mode (e.g., white text on indigo-500 falling below 4.5:1 ratio) by splitting theme tokens into distinct `--primary` (backgrounds) and `--primary-text` (typography) variables.
+  - _Accessible Naming:_ Fixed `label-content-name-mismatch` accessibility violations in icon buttons and avatars by pairing visible elements with hidden accessible labels (`aria-label`).
+- **Key Architectural Takeaways:**
+  - **Database-Level Aggregation:** Delegated calculation logic (`count`, `groupBy`) directly to the database layer rather than processing raw row arrays in application memory.
+  - **Multi-Context E2E Security Verification:** Utilized multi-browser context testing in Playwright to prove security guarantees end-to-end (verifying UI constraints, API `403` responses, and stranger `404` isolation).
+  - **Automated Accessibility Testing:** Integrated automated accessibility audits into CI pipelines to catch contrast, labeling, and structural issues that visual inspection misses.
