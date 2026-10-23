@@ -2,7 +2,7 @@
 
 ---
 
-## 📅 Day 1: Setup, tooling, CI and deployment
+## 📅 Day 1: Setup, tooling, CI, and deployment
 
 - **Core Deliverables:**
   - Initialized project architecture with App Shell, dark mode support, and CI/CD pipelines.
@@ -34,7 +34,7 @@
 
 ---
 
-## 📅 Day 3: Workspaces, roles, permissions and projects
+## 📅 Day 3: Workspaces, roles, permissions, and projects
 
 - **Core Deliverables:**
   - Implemented granular Role-Based Access Control (Owner, Admin, Member, Viewer) with an exhaustive test matrix.
@@ -65,7 +65,7 @@
 
 ---
 
-## 📅 Day 5: Assignment, search, filters and calendar
+## 📅 Day 5: Assignment, search, filters, and calendar
 
 - **Core Deliverables:**
   - Added task assignment restrictions (restricted to workspace members) and fixed due date validation edge cases.
@@ -83,7 +83,7 @@
 
 ---
 
-## 📅 Day 6: Dashboard, responsive polish and E2E tests
+## 📅 Day 6: Dashboard, responsive polish, and E2E tests
 
 - **Core Deliverables:**
   - Developed a high-performance analytics API leveraging database aggregation (`count`, `groupBy`).
@@ -97,3 +97,23 @@
   - **Database-Level Aggregation:** Delegated calculation logic (`count`, `groupBy`) directly to the database layer rather than processing raw row arrays in application memory.
   - **Multi-Context E2E Security Verification:** Utilized multi-browser context testing in Playwright to prove security guarantees end-to-end (verifying UI constraints, API `403` responses, and stranger `404` isolation).
   - **Automated Accessibility Testing:** Integrated automated accessibility audits into CI pipelines to catch contrast, labeling, and structural issues that visual inspection misses.
+
+---
+
+## 📅 Day 7: Security hardening, production readiness, and release
+
+- **Core Deliverables:**
+  - Performed complete OWASP checklist security review, configured security headers, and implemented Content Security Policy (CSP).
+  - Enabled security logging, Dependabot integration, and end-to-end security test suites verifying session enforcement, header presence, cookie flags, and CSP compliance.
+  - Implemented database-backed rate limiting for sign-in and sign-up endpoints.
+  - Created a safe, resettable demo seed script with three role accounts (Owner, Admin, Viewer).
+  - Completed production verification checks on Vercel and Neon, finalized the README with screenshots and a demo GIF, and published the v1.0.0 release.
+- **Technical Challenges & Solutions:**
+  - _Database Migrations in Production:_ Resolved initial confusion regarding running `prisma migrate deploy` against Neon with existing migration files. Learned that migration history lives in Git (`prisma/migrations`) while the state is tracked per-database via the `_prisma_migrations` table, verifiable via `prisma migrate status`.
+  - _Zero-Downtime Deployments:_ Practiced "expand, then switch" migration patterns, ensuring new required tables (like `rateLimit`) exist in production prior to releasing code that queries them.
+  - _CSP & Next.js Trade-offs:_ Identified that Next.js currently requires `'unsafe-inline'` for scripts under standard configurations, marking nonce-based CSP improvements as a future enhancement.
+  - _Shell History Hygiene:_ Discovered that leading-space commands still get logged in zsh by default; cleared shell history and enabled `HIST_IGNORE_SPACE`.
+- **Key Architectural Takeaways:**
+  - **Turn Claims into Tests:** Verified every security guarantee with an automated test (listing every route to confirm 401s without a session, testing header configuration, and listening for CSP violations). Defense-in-depth ensures a single missed layer doesn't compromise data.
+  - **Distributed Rate Limiting:** Recognized that in-memory counters fail on serverless architectures like Vercel due to instance isolation; stored rate limit counters in the database instead, enforcing stricter thresholds on high-risk endpoints (e.g., 5 attempts/minute for sign-in/sign-up).
+  - **Resettable Demo Architecture:** Designed demos to be fully repeatable by isolating credentials to environment variables, scoping demo accounts strictly by role, and using scripts to generate dates relative to `today`.
