@@ -1,6 +1,8 @@
 {
   "name": "task-management-platform",
   "version": "0.1.0",
+  "description": "A minimal, secure task management platform for students, freelancers and small teams.",
+  "license": "MIT",
   "private": true,
   "scripts": {
     "dev": "next dev",
